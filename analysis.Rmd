@@ -1,0 +1,39 @@
+---
+title: "Analysis"
+author: "Fernando Campaña"
+date: "1/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(dplyr)
+```
+
+## Cleaning data
+```{r}
+data <- read.csv("training.csv", na.strings = "?", sep = ",")  
+test_file <- read.csv("test.csv", na.strings = "?", sep = ",")  
+```
+
+There are some columns with missing values (NA), so we have to filter these columns out. 
+
+```{r}
+data_filtered <- bind_cols(data[8:11], data[37:49], data["classe"])
+test_filtered <- bind_cols(test_file[8:11], test_file[37:49])
+```
+
+Then we need to split the data into a training and a testing set:
+
+```{r, cache=TRUE}
+inTrain <- createDataPartition(y=data_filtered$classe, p=0.60)
+training <- data_filtered[inTrain,]
+testing <- data_filtered[-inTrain,]
+```
+
+```{r, cache=TRUE}
+modrf = train(classe ~ . , data= training_filtered, method="rf")
+```
+
+predict(modrf, newdata = test_filtered)
