@@ -1,5 +1,5 @@
 ---
-title: "Analysis"
+title: "Model selection and training"
 author: "Fernando Campaña"
 date: "1/6/2020"
 output: html_document
@@ -11,7 +11,9 @@ library(caret)
 library(dplyr)
 ```
 
-## Cleaning data
+## Cleaning the data
+
+We parse the csv data:
 ```{r}
 data <- read.csv("training.csv", na.strings = "?", sep = ",")  
 test_file <- read.csv("test.csv", na.strings = "?", sep = ",")  
@@ -24,16 +26,40 @@ data_filtered <- bind_cols(data[8:11], data[37:49], data["classe"])
 test_filtered <- bind_cols(test_file[8:11], test_file[37:49])
 ```
 
-Then we need to split the data into a training and a testing set:
-
+## Cross validation
+Then we need to split the data into a training and a testing set: 60% for training, 40% for testing.
 ```{r, cache=TRUE}
-inTrain <- createDataPartition(y=data_filtered$classe, p=0.60)
+inTrain <- createDataPartition(y=data_filtered$classe, p=0.60,list=FALSE)
 training <- data_filtered[inTrain,]
 testing <- data_filtered[-inTrain,]
+dim(training)
+dim(testing)
 ```
 
+## Training the model
+We are planning on using Random Forest due to its ease of understanding and great accuracy. We proceed to train the model:
 ```{r, cache=TRUE}
-modrf = train(classe ~ . , data= training_filtered, method="rf")
+modrf = train(classe ~ . , data= training, method="rf")
 ```
 
+## Measuring error rates
+We know that the out of sample error is going to be greater than the in sample error, due to overfitting.
+```{r, cache=TRUE}
+trainprediction <- predict(modrf, newdata = training)
+table(trainprediction, training$classe)
+correctTrain <-sum(trainprediction == training$classe)
+correctTrain
+correctTrain / length(trainprediction) * 100
+testprediction <- predict(modrf, newdata = testing)
+table(testprediction, testing$classe)
+correctTest <- sum(testprediction == testing$classe)
+correctTest
+correctTest / length(testprediction) * 100
+```
+The Trainprediction table contains the info used to calculate the "in sample error", with 11776 correct answers and a 100% correct rate and 0% error rate.
+While Testprediction is the "out of sample error", with 7522 correct answers and a 95.87% correct rate and a 5.13% error rate. These values confirm our prediction about error rates.
+
+So we are going to use this model to predict the labels in the next assignment, by employing the following line. 
+```{r, echo=FALSE}
 predict(modrf, newdata = test_filtered)
+```
